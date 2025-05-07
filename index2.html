@@ -4,29 +4,14 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>AJAX Table API Example</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
   <style>
     body {
       font-family: Arial, sans-serif;
       background-color: #f5f5f5;
       padding: 20px;
-    }
-
-    select#multiSelect {
-      width: 250px;
-      height: 150px;
-      padding: 10px;
-      font-size: 16px;
-      border: 2px solid #4a90e2;
-      border-radius: 8px;
-      background-color: #fff;
-      margin: 0 auto 20px;
-      display: block;
-    }
-
-    select#multiSelect option {
-      padding: 8px;
-      margin: 2px 0;
-      cursor: pointer;
     }
 
     table {
@@ -49,80 +34,32 @@
       font-size: 22px;
     }
 
-    .pagination {
-      text-align: center;
-      margin: 20px;
-    }
-
-    .pagination button {
-      padding: 10px 20px;
-      margin: 0 5px;
-      font-size: 16px;
-      cursor: pointer;
-    }
-
     img {
       border-radius: 8px;
     }
- 
 
+    .controls-container {
+      width: 95%;
+      margin: 0 auto;
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      gap: 20px;
+    }
 
-  label[for="multiSelect"] {
-    text-align: center;
-    display: block;
-    font-size: 18px;
-    margin-bottom: 10px;
-    font-weight: bold;
-  }
+    .pagination {
+      margin-bottom: 0;
+    }
 
-  select#multiSelect {
-    width: 260px;
-    height: 160px;
-    padding: 10px;
-    font-size: 16px;
-    border: 2px solid #4a90e2;
-    border-radius: 10px;
-    background: linear-gradient(to bottom, #ffffff, #f0f8ff);
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-    margin: 0 auto 20px;
-    display: block;
-    transition: all 0.3s ease-in-out;
-  }
-
-  select#multiSelect:focus {
-    border-color: #007bff;
-    outline: none;
-    box-shadow: 0 0 10px rgba(0, 123, 255, 0.5);
-  }
-
-  select#multiSelect option {
-    padding: 10px;
-    margin: 5px 0;
-    background-color: #fefefe;
-    font-weight: bold;
-    font-size: 16px;
-    color: #333;
-  }
-
-  select#multiSelect option:hover {
-    background-color: #e0f0ff;
-  }
-
-
+    @media (max-width: 768px) {
+      .controls-container {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+    }
   </style>
 </head>
 <body>
-
-  <label for="multiSelect" style="text-align:center; display:block; font-size:18px; margin-bottom:10px;">
-    Select number of rows to show:
-  </label>
-  <select id="multiSelect" multiple>
-    <option value="5">5</option>
-    <option value="10">10</option>
-    <option value="15">15</option>
-    <option value="20">20</option>
-    <option value="25">25</option>
-  </select>
 
   <h2 style="text-align:center;">User Data Table (AJAX)</h2>
 
@@ -144,16 +81,26 @@
     </tbody>
   </table>
 
-  <div class="pagination">
-    <button onclick="showPage(1)">1</button>
-    <button onclick="showPage(2)">2</button>
-    <button onclick="showPage(3)">3</button>
-    <button onclick="showPage(4)">4</button>
-    <button onclick="showPage(5)">5</button>
-    <button onclick="showPage(6)">6</button>
-    <button onclick="showPage(7)">7</button>
-    <button onclick="showPage(8)">8</button>
-    <button onclick="showPage(9)">9</button>
+  <!-- Controls & Pagination -->
+  <div class="controls-container">
+    <!-- Rows Per Page Dropdown -->
+    <div class="dropdown">
+      <button class="btn btn-primary dropdown-toggle" type="button" id="rowsDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+        Rows Per Page
+      </button>
+      <ul class="dropdown-menu" aria-labelledby="rowsDropdown">
+        <li><a class="dropdown-item" href="#" onclick="setRowsPerPage(5)">5</a></li>
+        <li><a class="dropdown-item" href="#" onclick="setRowsPerPage(10)">10</a></li>
+        <li><a class="dropdown-item" href="#" onclick="setRowsPerPage(15)">15</a></li>
+        <li><a class="dropdown-item" href="#" onclick="setRowsPerPage(20)">20</a></li>
+        <li><a class="dropdown-item" href="#" onclick="setRowsPerPage(25)">25</a></li>
+      </ul>
+    </div>
+
+    <!-- Pagination -->
+    <nav>
+      <ul class="pagination" id="pagination"></ul>
+    </nav>
   </div>
 
   <script>
@@ -163,7 +110,7 @@
 
     const tbody = document.querySelector("#userTable tbody");
 
-    // Fetch users and populate data
+    // Fetch users
     fetch("https://dummyjson.com/users?limit=100")
       .then(response => response.json())
       .then(data => {
@@ -175,8 +122,10 @@
         tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;color:red;">Error loading data</td></tr>`;
       });
 
-    // Show paginated users
     function showPage(page) {
+      const totalPages = Math.ceil(usersData.length / itemsPerPage);
+      if (page < 1 || page > totalPages) return;
+
       currentPage = page;
       tbody.innerHTML = "";
 
@@ -186,12 +135,10 @@
 
       pageData.forEach((user, index) => {
         const row = document.createElement("tr");
-
-        if (page === 2) {
-          row.style.backgroundColor = (index % 2 === 0) ? "yellow" : "white";
-        } else if (page === 1) {
-          row.style.backgroundColor = (index % 2 === 0) ? "lightgray" : "white";
-        }
+        const isEvenPage = page % 2 === 0;
+        row.style.backgroundColor = (index % 2 === 0)
+          ? (isEvenPage ? "yellow" : "lightgray")
+          : "white";
 
         row.innerHTML = `
           <td>${user.id}</td>
@@ -205,30 +152,43 @@
         `;
         tbody.appendChild(row);
       });
+
+      renderPagination();
     }
 
-    // Handle multi select change
-    document.getElementById("multiSelect").addEventListener("change", function () {
-      const selectedValues = Array.from(this.selectedOptions).map(option => parseInt(option.value));
-      if (selectedValues.length > 0) {
-        itemsPerPage = Math.max(...selectedValues);  // Or use any other logic
-        showPage(1);
+    function setRowsPerPage(value) {
+      itemsPerPage = value;
+      showPage(1); // Reset to first page
+    }
+
+    function renderPagination() {
+      const pagination = document.getElementById("pagination");
+      pagination.innerHTML = "";
+      const totalPages = Math.ceil(usersData.length / itemsPerPage);
+
+      // Previous
+      pagination.innerHTML += `
+        <li class="page-item ${currentPage === 1 ? 'disabled' : ''}">
+          <a class="page-link" href="javascript:void(0)" onclick="showPage(${currentPage - 1})">Previous</a>
+        </li>
+      `;
+
+      // Page numbers
+      for (let i = 1; i <= totalPages; i++) {
+        pagination.innerHTML += `
+          <li class="page-item ${currentPage === i ? 'active' : ''}">
+            <a class="page-link" href="javascript:void(0)" onclick="showPage(${i})">${i}</a>
+          </li>
+        `;
       }
-    });
-    document.getElementById("multiSelect").addEventListener("change", function () {
-    const selectedValues = Array.from(this.selectedOptions).map(option => parseInt(option.value));
-    if (selectedValues.length > 0) {
-      itemsPerPage = Math.max(...selectedValues);
-      showPage(1);
+
+      // Next
+      pagination.innerHTML += `
+        <li class="page-item ${currentPage === totalPages ? 'disabled' : ''}">
+          <a class="page-link" href="javascript:void(0)" onclick="showPage(${currentPage + 1})">Next</a>
+        </li>
+      `;
     }
-
-    // Optional: Visually mark selected options (works in some browsers)
-    Array.from(this.options).forEach(opt => {
-      opt.style.backgroundColor = opt.selected ? "#d0e9ff" : "#fff";
-      opt.style.color = opt.selected ? "#003366" : "#333";
-    });
-  });
   </script>
-
 </body>
 </html>
